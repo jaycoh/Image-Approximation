@@ -1,42 +1,33 @@
 from PIL import Image
 import numpy as np
-
 from Pixel import Pixel
-
 
 class Image:
 
     def __init__(self):
         imOpen = Image.open('Hexagon.jpg')
-        self.im = imOpen.load()
+        self.originalPic = imOpen.load()
+        self.im = self.originalPic.convert("L")
         self.imSize = self.im.size
         self.marked = np.zeros(self.im.size).astype(bool)
         self.regions = None
 
     def findRegions(self):
-        regions = []
+        lineCoordinates = []
         for x in range(self.imSize[0]):
             for y in range(self.imSize[1]):
-                if not self.marked[x, y]:
-                    self.marked[x, y] = True
-                    region = self.findRegion(x, y)
-                    regions = regions + region
-        return regions
+                if self.isContrasting(x, y):
+                    lineCoordinates.append((x, y))
+        return lineCoordinates
 
-    def findRegion(self, x, y):
-        curRegion = []
-        curRegion.append((x, y))
-        firstPixel = Pixel(self.im, (x, y))
+    def isContrasting(self, x, y):
+        centerPixel = Pixel(self.im, x, y)
         neighbors = self.getNeighbors(x, y)
-        for neighbor in neighbors:
-            visited = self.marked[neighbor[0], neighbor[1]]
-            if not visited:
-                self.marked[neighbor[0], neighbor[1]] = True
-                similar = firstPixel.isSimilar(self.im, neighbor)
-                if similar:
-                    nextRegion = self.findRegion(neighbor)
-                    curRegion = curRegion + nextRegion
-        return curRegion
+        for nbr in neighbors:
+            if not centerPixel.isSimilar(nbr):
+                return True
+
+        return False
 
     def getNeighbors(self, x, y):
         neighbors = []
